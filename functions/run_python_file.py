@@ -5,11 +5,11 @@ def run_python_file(working_dir: str, file_path: str, args = []):
     abs_working_dir = os.path.abspath(working_dir)
     abs_file_path = os.path.abspath(os.path.join(working_dir, file_path))
     if not abs_file_path.startswith(abs_working_dir):
-        return f'Cannot execute "{file_path}" as it is outside the working directory'
+        return f'Error: "{file_path}" is not in the working dir'
     if not os.path.isfile(abs_file_path):
-        return f'"{file_path}" does not exist'
+        return f'Error: "{file_path}" is not a file'
     if not file_path.endswith(".py"):
-        return f'"{file_path}" is not a Python file'
+        return f'Error: "{file_path}" is not a Python file'
 
     try:
         final_args = ["python3", file_path]
