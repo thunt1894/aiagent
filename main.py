@@ -6,6 +6,10 @@ from google import genai
 from google.genai import types
 from functions.get_files_info import schema_get_files_info
 from functions.get_files_info import get_files_info
+from functions.get_file_content import schema_get_file_content
+from functions.write_file import schema_write_file
+from functions.run_python_file import schema_run_python_file
+from call_function import call_function
 
 def main():
     load_dotenv()
@@ -13,17 +17,16 @@ def main():
     client = genai.Client(api_key=api_key)
 
     system_prompt = """
-    You are a helpful AI coding agent.
+    You are a helpful AI coding agent that MUST use function calls to help users.
 
-    When a user asks a question or makes a request, make a function call plan. You can perform the following operation:
+    When a user asks a question or makes a request, you MUST make function calls. You can perform the following operations:
 
     - List files and directories using get_files_info function
+    - Read the content of a file using get_file_content function  
+    - Write to a file (create or update) using write_file function
+    - Run a python file with optional arguments using run_python_file function
 
-    For get_files_info function:
-    - Always provide the 'directory' parameter
-    - Use '.' for current directory (root)
-    - Use 'calculator' for calculator directory
-    - Always include the directory parameter in your function calls
+    IMPORTANT: You MUST use function calls for all requests. Do not respond with text only - always call the appropriate function.
 
     All paths you provide should be relative to the working directory. You do not need to specify the working directory in
     your function calls as it is automatically injected for security reasons.
@@ -42,7 +45,12 @@ def main():
     ]
 
     available_functions = types.Tool(
-        function_declarations=[schema_get_files_info],
+        function_declarations=[
+            schema_get_files_info,
+            schema_get_file_content,
+            schema_write_file,
+            schema_run_python_file
+        ],
     )
 
     config = types.GenerateContentConfig(
@@ -65,12 +73,12 @@ def main():
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
     if response.function_calls:
-        print(response.function_calls)
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            result = call_function(function_call_part)
+            print(result)
 
     else:
-       print(response.text)
+        print(response.text)
 
 if __name__ == "__main__":
     main()
